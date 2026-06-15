@@ -1,0 +1,7 @@
+streamlit
+langchain-openai
+langgraph
+langchain-core
+pdfplumber
+pydantic
+python-dotenv
