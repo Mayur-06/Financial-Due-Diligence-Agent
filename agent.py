@@ -106,7 +106,7 @@ class FinancialMetrics(BaseModel):
 
 def get_llm(temp=0.0):
     return ChatOpenAI(
-        api_key=os.environ.get("GROQ_API_KEY"),,
+        api_key=os.environ.get("GROQ_API_KEY"),
         base_url="https://api.groq.com/openai/v1",
         model="llama-3.3-70b-versatile",
         temperature=temp,
