@@ -1,107 +1,15 @@
-import os
-from typing import Dict, Any, TypedDict, Optional
+#This file includes logics
 
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-import pdfplumber
-
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, END
-from langchain_core.output_parsers import PydanticOutputParser
-
-# ==========================================
-# 🔑 1. CONFIGURATION & ENVIRONMENT SETUP
-# ==========================================
-
 load_dotenv()
 
-# ==========================================
-# 📦 2. STATE & SCHEMA DEFINITIONS
-# ==========================================
 
-class AgentState(TypedDict):
-    pdf_path: str
-    extracted_financials: Dict[str, Any]
-    calculated_metrics: Dict[str, Any]
-    investment_memo: str
-
-
-class FinancialMetrics(BaseModel):
-
-    # Metadata
-    company_name: Optional[str] = Field(
-        default=None,
-        description="Name of the company as stated in the filing"
-    )
-    filing_type: Optional[str] = Field(
-        default=None,
-        description="Type of financial filing (e.g., 8-K, 10-Q, 10-K, annual report)"
-    )
-    currency: Optional[str] = Field(
-        default=None,
-        description="Reporting currency and unit scale (e.g., 'USD in millions', 'INR in millions')"
-    )
-    current_period_label: Optional[str] = Field(
-        default=None,
-        description="Label for the most recent reporting period (e.g., 'Q2 FY2026', 'FY2024')"
-    )
-    prior_period_label: Optional[str] = Field(
-        default=None,
-        description="Label for the comparison/prior reporting period found in the document"
-    )
-    revenue_current_period: Optional[float] = Field(
-        default=None,
-        description="Total revenue or net sales for the most recent reporting period"
-    )
-    revenue_prior_period: Optional[float] = Field(
-        default=None,
-        description="Total revenue or net sales for the prior/comparison reporting period"
-    )
-    net_income_current_period: Optional[float] = Field(
-        default=None,
-        description="Net income or net profit/loss for the most recent reporting period"
-    )
-    net_income_prior_period: Optional[float] = Field(
-        default=None,
-        description="Net income or net profit/loss for the prior/comparison reporting period"
-    )
-    gross_margin_current_period: Optional[float] = Field(
-        default=None,
-        description="Gross profit as a raw dollar/rupee amount for the most recent period"
-    )
-    diluted_eps_current_period: Optional[float] = Field(
-        default=None,
-        description="Diluted earnings per share for the most recent reporting period"
-    )
-    diluted_eps_prior_period: Optional[float] = Field(
-        default=None,
-        description="Diluted earnings per share for the prior reporting period"
-    )
-    operating_income_current_period: Optional[float] = Field(
-        default=None,
-        description="Operating income or EBIT for the most recent reporting period"
-    )
-    operating_cash_flow: Optional[float] = Field(
-        default=None,
-        description="Net cash generated from operating activities for the most recent period"
-    )
-    total_assets: Optional[float] = Field(
-        default=None,
-        description="Total assets as of the most recent balance sheet date"
-    )
-    total_debt: Optional[float] = Field(
-    default=None,
-    description="""Total financial debt only — sum of short-term borrowings 
-    and long-term debt/notes payable. Do NOT include trade payables, 
-    deferred revenue, lease liabilities, or other non-debt liabilities. 
-    Look for line items labeled 'Term debt', 'Notes payable', 
-    'Commercial paper', or 'Long-term debt'."""
-    )
-
-
-# ==========================================
-# 🤖 LLM FACTORY
-# ==========================================
+from app.model import AgentState, FinancialMetrics
+from langchain_openai import ChatOpenAI
+import pdfplumber
+from langchain_core.output_parsers import PydanticOutputParser
+from langgraph.graph import StateGraph, END
+import os
 
 def get_llm(temp=0.0):
     return ChatOpenAI(
@@ -110,11 +18,6 @@ def get_llm(temp=0.0):
         model="llama-3.3-70b-versatile",
         temperature=temp,
     )
-
-
-# ==========================================
-# 📄 PDF TEXT EXTRACTOR
-# ==========================================
 
 def extract_pdf_text(pdf_path: str, max_chars: int = 25000) -> str:
 
@@ -207,9 +110,7 @@ def extract_pdf_text(pdf_path: str, max_chars: int = 25000) -> str:
 
     return full_text
 
-# ==========================================
-# 🔄 NODE 1: FINANCIAL DATA EXTRACTION
-# ==========================================
+
 
 def extraction_node(state: AgentState):
 
@@ -241,7 +142,11 @@ STRICT RULES:
 TEXT:
 {full_text}
 """
-    response = llm.invoke(prompt)
+#    response = llm.invoke(prompt)
+    try:
+        response = llm.invoke(prompt)
+    except Exception as e:
+        raise RuntimeError(f"LLM call failed during extraction: {e}")
 
     # Clean the response before parsing
     raw = response.content.strip()
@@ -267,9 +172,6 @@ TEXT:
     return {"extracted_financials": result}
 
 
-# ==========================================
-# 🔄 NODE 2: VALIDATION
-# ==========================================
 
 def validation_node(state: AgentState):
 
@@ -277,46 +179,82 @@ def validation_node(state: AgentState):
     print("│ NODE 2: VALIDATION                 │")
     print("╰────────────────────────────────────╯")
 
-    data = state["extracted_financials"]
+    # data = state["extracted_financials"]
 
-    # Check required fields exist and are non-zero
-    required_fields = [
-        "revenue_current_period",
-        "revenue_prior_period",
-        "net_income_current_period",
-        "net_income_prior_period",
-    ]
+    # # Check required fields exist and are non-zero
+    # required_fields = [
+    #     "revenue_current_period",
+    #     "revenue_prior_period",
+    #     "net_income_current_period",
+    #     "net_income_prior_period",
+    # ]
 
-    missing = [f for f in required_fields if data.get(f) is None]
+    # missing = [f for f in required_fields if data.get(f) is None]
 
-    if missing:
-        raise ValueError(
-            f"❌ Extraction failed. Missing or zero fields: {missing}"
-        )
+    # if missing:
+    #     raise ValueError(
+    #         f"❌ Extraction failed. Missing or zero fields: {missing}"
+    #     )
 
-    # Sanity check: revenue must be positive
-    if data["revenue_current_period"] <= 0:
-        raise ValueError(
-            "❌ Extracted revenue is zero or negative — likely a parsing error"
-        )
+    # # Sanity check: revenue must be positive
+    # if data["revenue_current_period"] <= 0:
+    #     raise ValueError(
+    #         "❌ Extracted revenue is zero or negative — likely a parsing error"
+    #     )
 
-    # Sanity check: current period revenue should generally be >= prior
-    # (just a warning, not a hard stop)
-    if data["revenue_current_period"] < data["revenue_prior_period"] * 0.5:
-        print(
-            "⚠️  Warning: Current period revenue is less than 50% of prior period — verify extraction"
-        )
+    # # Sanity check: current period revenue should generally be >= prior
+    # # (just a warning, not a hard stop)
+    # if data["revenue_current_period"] < data["revenue_prior_period"] * 0.5:
+    #     print(
+    #         "⚠️  Warning: Current period revenue is less than 50% of prior period — verify extraction"
+    #     )
 
-    print(f"✅ Validation Passed for {data['company_name']}")
-    print(f"   Period: {data['current_period_label']} vs {data['prior_period_label']}")
-    print(f"   Currency: {data['currency']}")
+    # print(f"✅ Validation Passed for {data['company_name']}")
+    # print(f"   Period: {data['current_period_label']} vs {data['prior_period_label']}")
+    # print(f"   Currency: {data['currency']}")
 
-    return state
+    # return state
+
+    try:
+        data = state["extracted_financials"]
+
+        required_fields = [
+            "revenue_current_period",
+            "revenue_prior_period",
+            "net_income_current_period",
+            "net_income_prior_period",
+        ]
+
+        missing = [f for f in required_fields if data.get(f) is None]
+
+        if missing:
+            raise ValueError(
+                f"❌ Extraction failed. Missing or zero fields: {missing}"
+            )
+
+        if data["revenue_current_period"] <= 0:
+            raise ValueError(
+                "❌ Extracted revenue is zero or negative — likely a parsing error"
+            )
+
+        if data["revenue_current_period"] < data["revenue_prior_period"] * 0.5:
+          #  print("⚠️  Warning: Current period revenue is less than 50% of prior period — verify extraction")
+          warning_msg = "Current period revenue is less than 50% of prior period — verify extraction"
+          print(f"⚠️  {warning_msg}")
+          state["warnings"].append(warning_msg)
+
+        print(f"✅ Validation Passed for {data['company_name']}")
+        print(f"   Period: {data['current_period_label']} vs {data['prior_period_label']}")
+        print(f"   Currency: {data['currency']}")
+
+        return state
+
+    except ValueError:
+        raise
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error during validation: {e}")
 
 
-# ==========================================
-# 🔄 NODE 3: CALCULATIONS
-# ==========================================
 
 def analysis_node(state: AgentState):
 
@@ -409,10 +347,6 @@ def analysis_node(state: AgentState):
     }
 
 
-# ==========================================
-# 🔄 NODE 4: INVESTMENT MEMO GENERATION
-# ==========================================
-
 def reporting_node(state: AgentState):
 
     print("\n╭────────────────────────────────────╮")
@@ -471,13 +405,18 @@ Choose one: Strong Buy | Buy | Hold | Avoid
 Justify using only the provided data.
 """
 
-    response = llm.invoke(prompt)
+    #response = llm.invoke(prompt)
+    try:
+        response = llm.invoke(prompt)
+    except Exception as e:
+        raise RuntimeError(f"LLM call failed during memo generation: {e}")
 
     print("✅ Memo Generated")
 
     return {
         "investment_memo": response.content
     }
+
 
 
 # ==========================================
@@ -501,24 +440,3 @@ workflow.add_edge("generate_memo", END)
 app = workflow.compile()
 
 print("\n🏁 Graph Pipeline Successfully Compiled!")
-
-
-# ==========================================
-# 🚀 EXECUTION
-# ==========================================
-
-if __name__ == "__main__":
-
-    inputs = {
-        "pdf_path": "apple_8k.pdf"   # replace with any company's filing
-    }
-
-    print("\n🚀 Invoking Financial Due Diligence Agent...")
-
-    final_output = app.invoke(inputs)
-
-    print("\n" + "=" * 70)
-    print("📄 GENERATED PRIVATE EQUITY MEMO")
-    print("=" * 70 + "\n")
-
-    print(final_output["investment_memo"])

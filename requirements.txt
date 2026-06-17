@@ -5,3 +5,8 @@ langchain-core
 pdfplumber
 pydantic
 python-dotenv
+fastapi
+uvicorn
+python-multipart
+pdfplumber
+langchain

@@ -1,6 +1,7 @@
 import os
 from typing import Dict, Any, TypedDict, Optional
-
+from dotenv import load_dotenv
+load_dotenv()
 from pydantic import BaseModel, Field
 #from dotenv import load_dotenv
 import pdfplumber
