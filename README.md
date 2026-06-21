@@ -1,4 +1,4 @@
-# 📊 Automated Financial Due Diligence Agent
+# Automated Financial Due Diligence Agent
 
 An AI-powered agent built for **Private Equity** workflows that ingests a company's financial filing (10-K, 10-Q, 8-K, or annual report PDF) and produces a structured **investment memo** — automatically extracting financial metrics, calculating growth and profitability ratios, and generating bull/bear analysis with an investment recommendation.
 
@@ -6,7 +6,7 @@ An AI-powered agent built for **Private Equity** workflows that ingests a compan
 
 ---
 
-## ✨ What It Does
+## What It Does
 
 1. **Extracts** financial data from any company's filing PDF (10-K, 10-Q, 8-K, annual reports — US or Indian formats)
 2. **Validates** the extracted data for sanity (missing fields, negative revenue, suspicious deltas)
@@ -16,7 +16,7 @@ An AI-powered agent built for **Private Equity** workflows that ingests a compan
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 ```
 PDF Upload
@@ -51,7 +51,7 @@ Built as a **LangGraph** state machine — each node is independently testable a
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 financial-due-diligence-agent/
@@ -79,7 +79,7 @@ financial-due-diligence-agent/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Clone & install
 
@@ -121,7 +121,7 @@ streamlit run streamlit_app.py
 
 ---
 
-## 📡 API Reference
+##  API Reference
 
 ### `GET /`
 Returns API metadata and available endpoints.
@@ -180,7 +180,7 @@ curl -X POST 'http://127.0.0.1:8000/analyze' \
 
 ---
 
-## 🧩 Key Design Decisions
+##  Key Design Decisions
 
 ### Smart page filtering, not brute-force chunking
 Early versions sent every page containing words like *"net income"* to the LLM — this captured 25+ pages of notes, ESOP disclosures, and auditor reports, blowing through free-tier token limits. The pipeline now filters to **primary financial statement pages only** (P&L, balance sheet, cash flow statement) and explicitly excludes notes/annexure pages.
@@ -203,7 +203,7 @@ A company moving from a ₹1,569 Cr loss to a ₹53 Cr loss is *not* "net income
 
 ---
 
-## 🐳 Docker
+##  Docker
 
 ```bash
 docker build -t financial-agent .
@@ -212,7 +212,7 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key financial-agent
 
 ---
 
-## ☁️ Deployment (Render)
+##  Deployment (Render)
 
 1. Push this repo to GitHub
 2. On [render.com](https://render.com) → **New → Web Service**
@@ -224,7 +224,7 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key financial-agent
 
 ---
 
-## 🛣️ Roadmap
+##  Roadmap
 
 - [ ] Smarter page filter 
 - [ ] Multi-document comparison (compare two filings side by side)
@@ -234,13 +234,13 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key financial-agent
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This tool is for educational and research purposes. It does not constitute financial advice. Always verify extracted figures against the source filing before making investment decisions.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **LangGraph** — orchestrates the multi-step extraction → validation → analysis → memo pipeline
 - **Groq (Llama 3.3 70B)** — LLM backend for extraction and memo generation
