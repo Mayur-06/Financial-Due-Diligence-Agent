@@ -12,7 +12,7 @@ An AI-powered agent built for **Private Equity** workflows that ingests a compan
 2. **Validates** the extracted data for sanity (missing fields, negative revenue, suspicious deltas)
 3. **Calculates** growth rates, margins, and debt ratios — context-aware for loss-making vs. profitable companies
 4. **Generates** a full Markdown investment memo: Executive Summary, Financial Analysis, Bull Case, Bear Case, and Recommendation
-5. **Scores its own confidence** based on how much data was successfully extracted
+
 
 ---
 
@@ -38,7 +38,7 @@ PDF Upload
              ▼
 ┌─────────────────────────┐
 │  NODE 3: Analysis         │  → Revenue growth, net margin, gross/operating
-└────────────┬─────────────┘     margin, EPS growth, debt-to-assets, confidence score
+└────────────┬─────────────┘     margin, EPS growth, debt-to-assets
              ▼
 ┌─────────────────────────┐
 │  NODE 4: Memo Generation  │  → LLM writes the final PE investment memo
@@ -164,7 +164,6 @@ curl -X POST 'http://127.0.0.1:8000/analyze' \
     "debt_to_assets_ratio": 0.71
   },
   "investment_memo": "# PRIVATE EQUITY INVESTMENT MEMO — Apple Inc. ...",
-  "confidence_score": 0.85,
   "model_version": "1.0.0",
   "processing_time_seconds": 4.32,
   "warnings": []
@@ -202,9 +201,6 @@ A company moving from a ₹1,569 Cr loss to a ₹53 Cr loss is *not* "net income
 | `RuntimeError` | 502 | LLM or pipeline failure |
 | `Exception` | 500 | Anything unexpected |
 
-### Confidence scoring
-Every response includes a `confidence_score` (0.0–1.0) that decreases for each optional field the extraction failed to find — so consumers of the API know *how much to trust* a given memo, not just receive it blindly.
-
 ---
 
 ## 🐳 Docker
@@ -230,7 +226,7 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key financial-agent
 
 ## 🛣️ Roadmap
 
-- [ ] Smarter page filter with confidence-weighted keyword scoring
+- [ ] Smarter page filter 
 - [ ] Multi-document comparison (compare two filings side by side)
 - [ ] Company/sector tiering (`Large Cap` / `Mid Cap` / `Small Cap`) based on extracted revenue
 - [ ] Support for chunked extraction on very large filings (10-Ks, 100+ pages) without hitting rate limits
